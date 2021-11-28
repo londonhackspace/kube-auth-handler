@@ -76,8 +76,7 @@ func handleCheckToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Info().Str("token", tokenReview.Spec.Token).
-		Msg("got token review")
+	log.Info().Msg("got token review")
 
 	response := authentication.TokenReview {
 		TypeMeta: tokenReview.TypeMeta,
