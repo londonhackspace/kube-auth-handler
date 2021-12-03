@@ -24,3 +24,18 @@ jobs:
           push: true
           tags: |
             docker.pkg.github.com/londonhackspace/kube-auth-handler/server:latest
+  build_client:
+    name: Build Clients
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup go
+        uses: actions/setup-go@v2
+      - run: |
+          cd auth-client
+          env GOOS=linux GOARCH=amd64 go build -o ldap-kube-auth_linux_amd64
+          env GOOS=linux GOARCH=arm go build -o ldap-kube-auth_linux_arm
+          env GOOS=linux GOARCH=arm64 go build -o ldap-kube-auth_linux_arm64
+          env GOOS=darwin GOARCH=amd64 go build -o ldap-kube-auth_macos_amd64
+          env GOOS=darwin GOARCH=arm64 go build -o ldap-kube-auth_macos_arm64
+          env GOOS=windows GOARCH=amd64 go build -o ldap-kube-auth_windows_amd64
