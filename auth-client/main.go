@@ -20,7 +20,7 @@ func getCachedToken(clusername string) *cacheconfig {
 		fmt.Fprintln(os.Stderr, "Error getting home directory:", err.Error())
 		return nil
 	}
-	f, err := os.Open(homedir + string(os.PathSeparator) + ".kube/" + clusername + "_cache")
+	f, err := os.Open(homedir + string(os.PathSeparator) + ".kube" + string(os.PathSeparator) + clusername + "_cache")
 	if err != nil {
 		// probably just that the file doesn't exist, so don't bother logging
 		return nil
@@ -50,7 +50,7 @@ func setCachedToken(clusername string, cfg *cacheconfig) {
 		fmt.Fprintln(os.Stderr, "Error getting home directory:", err.Error())
 		return
 	}
-	f, err := os.Create(homedir + string(os.PathSeparator) + ".kube/" + clusername + "_cache")
+	f, err := os.Create(homedir + string(os.PathSeparator) + ".kube" + string(os.PathSeparator) + clusername + "_cache")
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error opening cache file:", err.Error())
 		return
@@ -113,6 +113,11 @@ func main() {
 	if len(cluster) == 0 {
 		fmt.Fprintln(os.Stderr, "AUTH_CLUSTER empty. Exiting.")
 		os.Exit(1)
+	}
+
+	// this might get better results on Windows
+	if len(user) == 0 {
+		user = os.Getenv("USERNAME")
 	}
 
 	cached := getCachedToken(cluster)
