@@ -8,5 +8,6 @@ type LoginRequest struct {
 type LoginResponse struct {
 	Success bool `json:"success"`
 
-	Token string `json:"token"`
+	Token       string `json:"token"`
+	TokenExpiry int64  `json:"token_expiry"`
 }

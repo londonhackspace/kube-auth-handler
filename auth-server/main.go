@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 )
 
 var authenticator auth.Auth
@@ -45,6 +46,7 @@ func handleGetToken(w http.ResponseWriter, r *http.Request) {
 			Int("uid", user.Uid).
 			Msg("User authenticated")
 		resp.Token = sessionstore.AddUser(user)
+		resp.TokenExpiry = time.Now().Add(time.Hour * 6).Unix()
 	} else {
 		log.Err(err).
 			Str("username", query.Username).Msg("Error authenticating user")
@@ -78,11 +80,11 @@ func handleCheckToken(w http.ResponseWriter, r *http.Request) {
 
 	log.Info().Msg("got token review")
 
-	response := authentication.TokenReview {
+	response := authentication.TokenReview{
 		TypeMeta: tokenReview.TypeMeta,
 		Status: authentication.TokenReviewStatus{
 			Authenticated: false,
-			Error: "Not Authenticated",
+			Error:         "Not Authenticated",
 		},
 	}
 
@@ -111,21 +113,21 @@ func handleCheckToken(w http.ResponseWriter, r *http.Request) {
 func main() {
 
 	redisConn := redis.NewClient(&redis.Options{
-		Addr: os.Getenv("REDIS_SERVER"),
+		Addr:     os.Getenv("REDIS_SERVER"),
 		Password: "",
-		DB: 0,
+		DB:       0,
 	})
 	defer redisConn.Close()
 
 	sessionstore = auth.CreateRedisSessionStore(redisConn)
-	
+
 	ldapConfig := auth.LDAPConfig{
-		BindDN:  os.Getenv("LDAP_BINDDN"),
-		BindPW:  os.Getenv("LDAP_BINDPW"),
-		Server:  os.Getenv("LDAP_SERVER"),
-		UserOU:  os.Getenv("LDAP_USEROU"),
-		GroupOU: os.Getenv("LDAP_GROUPOU"),
-		BaseDN:  os.Getenv("LDAP_BASEDN"),
+		BindDN:            os.Getenv("LDAP_BINDDN"),
+		BindPW:            os.Getenv("LDAP_BINDPW"),
+		Server:            os.Getenv("LDAP_SERVER"),
+		UserOU:            os.Getenv("LDAP_USEROU"),
+		GroupOU:           os.Getenv("LDAP_GROUPOU"),
+		BaseDN:            os.Getenv("LDAP_BASEDN"),
 		LdapSkipTLSVerify: os.Getenv("LDAP_SKIPTLSVERIFY") == "yes",
 	}
 
@@ -142,12 +144,11 @@ func main() {
 	}
 
 	authenticator = auth.CreateLDAPAuth(ldapConfig)
-	
+
 	rtr := mux.NewRouter()
 
 	rtr.Path("/getToken").Methods(http.MethodPost).HandlerFunc(handleGetToken)
 	rtr.Path("/verify").Methods(http.MethodPost).HandlerFunc(handleCheckToken)
-
 
 	listen, ok := os.LookupEnv("LISTEN_ADDR")
 
