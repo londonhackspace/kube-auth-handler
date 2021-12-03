@@ -12,9 +12,9 @@ type LDAPConfig struct {
 	BindPW string
 	Server string
 
-	UserOU string
+	UserOU  string
 	GroupOU string
-	BaseDN string
+	BaseDN  string
 
 	LdapSkipTLSVerify bool
 }
@@ -29,7 +29,7 @@ func CreateLDAPAuth(config LDAPConfig) Auth {
 	}
 }
 
-func (ldap *LDAPAuth) getConnection() (*ldapv3.Conn,error) {
+func (ldap *LDAPAuth) getConnection() (*ldapv3.Conn, error) {
 	cfg := tls.Config{InsecureSkipVerify: ldap.config.LdapSkipTLSVerify}
 	return ldapv3.DialURL(ldap.config.Server, ldapv3.DialWithTLSConfig(&cfg))
 }
@@ -55,9 +55,8 @@ func (ldap *LDAPAuth) makeLDAPQuery(req *ldapv3.SearchRequest, c *ldapv3.Conn) (
 	return ourCon.Search(req)
 }
 
-
 func (ldap *LDAPAuth) getGroups(username string, c *ldapv3.Conn) []string {
-	query := ldapv3.NewSearchRequest(ldap.config.GroupOU + ","+ ldap.config.BaseDN,
+	query := ldapv3.NewSearchRequest(ldap.config.GroupOU+","+ldap.config.BaseDN,
 		ldapv3.ScopeWholeSubtree, ldapv3.NeverDerefAliases,
 		0, 0, false,
 		fmt.Sprintf("(&(objectClass=posixGroup)(memberUid=%s))", ldapv3.EscapeFilter(username)),
@@ -69,7 +68,7 @@ func (ldap *LDAPAuth) getGroups(username string, c *ldapv3.Conn) []string {
 	}
 
 	var groups []string
-	for _,entry := range res.Entries {
+	for _, entry := range res.Entries {
 		groups = append(groups, entry.GetAttributeValue("cn"))
 	}
 	return groups
@@ -81,11 +80,11 @@ func (ldap *LDAPAuth) AuthenticateUser(username string, password string) (*User,
 		return nil, ServerError
 	}
 	// search for the user
-	query := ldapv3.NewSearchRequest(ldap.config.UserOU + "," + ldap.config.BaseDN,
+	query := ldapv3.NewSearchRequest(ldap.config.UserOU+","+ldap.config.BaseDN,
 		ldapv3.ScopeSingleLevel, ldapv3.NeverDerefAliases,
 		0, 0, false,
 		fmt.Sprintf("(&(objectClass=organizationalPerson)(uid=%s))", ldapv3.EscapeFilter(username)),
-		[]string{"dn","givenName", "uidNumber"}, nil)
+		[]string{"dn", "givenName", "uidNumber"}, nil)
 
 	res, err := ldap.makeLDAPQuery(query, c)
 	if err != nil {
@@ -100,17 +99,17 @@ func (ldap *LDAPAuth) AuthenticateUser(username string, password string) (*User,
 	err = c.Bind(res.Entries[0].DN, password)
 	if err != nil {
 		/*log.Err(err).
-			Str("username", username).
-			Msg("Invalid Password")*/
+		Str("username", username).
+		Msg("Invalid Password")*/
 		return nil, AuthError
 	}
 
 	uid, err := strconv.ParseInt(res.Entries[0].GetAttributeValue("uidNumber"), 10, 32)
 
 	return &User{
-		Uid: int(uid),
-		Name: res.Entries[0].GetAttributeValue("givenName"),
+		Uid:      int(uid),
+		Name:     res.Entries[0].GetAttributeValue("givenName"),
 		Username: username,
-		Groups: ldap.getGroups(username, c),
+		Groups:   ldap.getGroups(username, c),
 	}, nil
 }
