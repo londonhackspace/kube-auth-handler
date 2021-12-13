@@ -147,7 +147,6 @@ func main() {
 		var givenUsername string
 		// ignore any errors here - we will just check the string
 		fmt.Scanln(&givenUsername)
-		fmt.Fprintf(os.Stderr, "\n")
 
 		if len(givenUsername) == 0 {
 			givenUsername = user
@@ -163,6 +162,7 @@ func main() {
 
 		fmt.Fprint(os.Stderr, "Password: ")
 		data, err := term.ReadPassword(int(os.Stdin.Fd()))
+		fmt.Fprintf(os.Stderr, "\n")
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "Error getting password")
 			os.Exit(1)
