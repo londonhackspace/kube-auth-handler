@@ -147,6 +147,7 @@ func main() {
 		var givenUsername string
 		// ignore any errors here - we will just check the string
 		fmt.Scanln(&givenUsername)
+		fmt.Fprintf(os.Stderr, "\n")
 
 		if len(givenUsername) == 0 {
 			givenUsername = user
@@ -171,10 +172,24 @@ func main() {
 		expiration = metav1.NewTime(time.Now().Add(time.Hour * 6))
 	}
 
+	// We really only care about this so we can return the same version string we were given
+	var inputExecCredential clientauth.ExecCredential
+	inputExecCredentialData := os.Getenv("KUBERNETES_EXEC_INFO")
+	err := json.Unmarshal([]byte(inputExecCredentialData), &inputExecCredential)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Could not read KUBERNETES_EXEC_INFO")
+		// set some sane-ish defaults
+		inputExecCredential = clientauth.ExecCredential{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "client.authentication.k8s.io/v1",
+			},
+		}
+	}
+
 	output := clientauth.ExecCredential{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ExecCredential",
-			APIVersion: "client.authentication.k8s.io/v1",
+			APIVersion: inputExecCredential.APIVersion,
 		},
 		Status: &clientauth.ExecCredentialStatus{
 			Token:               token,
